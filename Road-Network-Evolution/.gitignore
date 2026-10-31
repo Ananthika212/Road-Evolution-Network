@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Model weights (too large for GitHub - see README for download links)
+weights/*
+!weights/.gitkeep
+*.pth
+*.pt
+*.ckpt
+
+# Datasets and outputs
+data/
+datasets/
+results/
+outputs/
+best_pairs/
+*.npy
+
+# Frontend build tooling
+UI/frontend/node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

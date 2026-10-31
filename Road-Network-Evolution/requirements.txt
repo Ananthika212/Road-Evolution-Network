@@ -1,0 +1,15 @@
+torch
+torchvision
+numpy
+scipy
+scikit-image
+pandas
+pillow
+opencv-python-headless
+einops
+timm
+tqdm
+ptflops
+fastapi
+uvicorn
+python-multipart

@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROAD-EVO</title>
+<style>
+  :root {
+    --bg: #07100d; --side: #0a1511; --panel: #0d1a16; --panel2: #112219; --line: #1a2e26; --line2: #23413a;
+    --ink: #e9f4ee; --muted: #7e948a; --dim: #55695f;
+    --acc: #8be26d; --acc-ink: #0a1a0e; --acc-soft: rgba(139, 226, 109, .12); --acc-line: rgba(139, 226, 109, .45);
+    --high: #ef4444; --med: #f5b324; --low: #4c8dff;
+    --high-bg: rgba(239, 68, 68, .16); --med-bg: rgba(245, 179, 36, .16); --low-bg: rgba(76, 141, 255, .16);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+               font: 14px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, select { font: inherit; color: inherit; }
+  .app { display: grid; grid-template-columns: 222px 1fr; min-height: 100vh; }
+
+  /* ---------- sidebar ---------- */
+  aside { background: var(--side); border-right: 1px solid var(--line); padding: 18px 12px; position: sticky; top: 0; height: 100vh; }
+  .brand { display: flex; gap: 10px; align-items: center; padding: 4px 8px 22px; }
+  .logo { width: 34px; height: 34px; border-radius: 9px; background: var(--acc); color: var(--acc-ink);
+          display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+  .brand b { display: block; letter-spacing: .06em; font-size: 15px; }
+  .brand small { color: var(--muted); font-size: 11px; }
+  nav button { width: 100%; display: flex; gap: 11px; align-items: center; text-align: left; padding: 10px 12px; margin-bottom: 4px;
+               border: 1px solid transparent; background: transparent; border-radius: 10px; color: var(--muted); cursor: pointer; }
+  nav button svg { width: 16px; height: 16px; flex: none; }
+  nav button:hover { color: var(--ink); }
+  nav button[aria-current="page"] { background: var(--panel2); border-color: var(--line2); color: var(--acc); }
+  nav button:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ---------- page frame ---------- */
+  main { padding: 22px 28px 60px; min-width: 0; }
+  .page { display: none; } .page.show { display: block; }
+  .crumb { font-size: 10.5px; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; }
+  .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin: 6px 0 20px; }
+  h1 { font-size: 26px; margin: 2px 0 2px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); }
+  .pills { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pill { display: inline-flex; gap: 7px; align-items: center; border: 1px solid var(--line2); background: var(--panel); border-radius: 999px;
+          padding: 5px 13px; font-size: 12px; color: var(--ink); }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--acc); display: inline-block; }
+  .pill.warn i { background: var(--med); } .pill.err i { background: var(--high); }
+  .pill.ok { border-color: var(--acc-line); color: var(--acc); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; margin-bottom: 18px; }
+  .eyebrow { font-size: 10.5px; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; }
+  h2 { font-size: 18px; margin: 3px 0 4px; } h3 { font-size: 14px; margin: 0; display: flex; gap: 8px; align-items: center; }
+  h3 svg { width: 16px; height: 16px; color: var(--acc); }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid2.wide { grid-template-columns: 1.05fr 1.3fr; }
+
+  /* ---------- form ---------- */
+  .form { display: grid; grid-template-columns: 1.4fr 1fr 1fr 0.7fr; gap: 16px; margin: 16px 0 6px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .field input { width: 100%; padding: 11px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line2); outline: none; }
+  .field input:focus { border-color: var(--acc); }
+  .field input[type=date] { color-scheme: dark; }
+  .field .hint { margin-top: 5px; font-size: 11px; color: var(--dim); }
+  .formfoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+              border-top: 1px solid var(--line); margin-top: 14px; padding-top: 14px; }
+  .btn { border: 0; border-radius: 10px; padding: 11px 20px; font-weight: 700; cursor: pointer; background: var(--acc); color: var(--acc-ink); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; border: 1px solid var(--line2); color: var(--ink); font-weight: 600; padding: 8px 14px; }
+  .btn.ghost:hover { border-color: var(--acc); color: var(--acc); }
+  .btn.dark { background: #134430; color: #cfeedd; width: 100%; padding: 13px; }
+  .btn.dark:hover { background: #185a3e; }
+  .status { display: none; margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: var(--acc-soft); border: 1px solid var(--acc-line);
+            gap: 12px; align-items: center; }
+  .status.show { display: flex; } .status.error { background: var(--high-bg); border-color: var(--high); color: #ffb4b4; }
+  .spin { width: 17px; height: 17px; border: 3px solid var(--line2); border-top-color: var(--acc); border-radius: 50%; animation: s .8s linear infinite; flex: none; }
+  .status.error .spin { display: none; } @keyframes s { to { transform: rotate(360deg); } }
+
+  /* ---------- imagery ---------- */
+  .obs { border: 1px solid var(--line); background: var(--panel2); border-radius: 14px; overflow: hidden; }
+  .obs-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; font-size: 13px; }
+  .tag { display: inline-grid; place-items: center; min-width: 24px; height: 22px; padding: 0 6px; border-radius: 6px; font-size: 11px; font-weight: 700;
+         background: #14392a; color: var(--acc); margin-right: 8px; }
+  .drop { position: relative; display: grid; place-items: center; text-align: center; min-height: 260px; margin: 0 10px 10px;
+          border: 2px dashed var(--line2); border-radius: 10px; cursor: pointer; overflow: hidden; background: var(--bg); }
+  .drop:hover, .drop.over { border-color: var(--acc); background: var(--acc-soft); }
+  .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .drop img { display: none; width: 100%; height: 100%; object-fit: contain; max-height: 420px; }
+  .drop.has { border-style: solid; padding: 0; } .drop.has img { display: block; } .drop.has .ph { display: none; }
+  .ph b { display: block; margin-bottom: 3px; } .ph span { color: var(--muted); font-size: 12px; }
+
+  /* ---------- banners, tiles ---------- */
+  .banner { display: grid; grid-template-columns: auto 1fr repeat(4, auto); gap: 22px; align-items: center; }
+  .check { width: 48px; height: 48px; border-radius: 50%; background: var(--acc-soft); border: 1px solid var(--acc-line); color: var(--acc);
+           display: grid; place-items: center; }
+  .check svg { width: 24px; height: 24px; }
+  .banner h2 { color: var(--acc); margin: 0; } .stat small { display: block; color: var(--dim); font-size: 11px; } .stat b { font-size: 14px; }
+  .imgpair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .imgbox { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .imgbox .cap { font-size: 12.5px; font-weight: 600; } .imgbox .cap small { display: block; color: var(--dim); font-weight: 400; }
+  .imgbox img { width: 100%; display: block; border-radius: 8px; margin-top: 8px; background: #000; }
+  .outs3 { display: grid; grid-template-columns: repeat(3, 1fr) ; gap: 12px; margin-top: 12px; }
+  .outs3 .imgbox.sel { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc-line); }
+  .cbar { display: flex; gap: 6px; align-items: stretch; margin-top: 8px; }
+  .cbar img { margin-top: 0; flex: 1; min-width: 0; }
+  .cbar .bar { width: 9px; border-radius: 4px; background: linear-gradient(#fff, #000); position: relative; flex: none; }
+  .cbar .ticks { display: flex; flex-direction: column; justify-content: space-between; font-size: 9px; color: var(--muted); }
+  .legend { display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: var(--muted); justify-content: center; }
+  .legend.row { flex-direction: row; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .metrics3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .metric { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .metric small { color: var(--muted); font-size: 12px; } .metric b { display: block; font-size: 24px; margin-top: 4px; }
+  .okbox { margin-top: 12px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--acc-line); background: var(--acc-soft); display: flex; gap: 12px; align-items: center; }
+  .okbox b { color: var(--acc); display: block; } .okbox span { font-size: 12px; color: var(--muted); }
+  .thumbs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 14px; }
+  .thumb { background: transparent; border: 1px solid var(--line); border-radius: 10px; padding: 4px; cursor: pointer; text-align: center; color: var(--muted); font-size: 11px; }
+  .thumb.sel { border-color: var(--acc); } .thumb img { width: 100%; display: block; border-radius: 6px; }
+  .rowend { display: flex; justify-content: flex-end; margin-top: 16px; }
+
+  /* ---------- KPI cards ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; gap: 14px; align-items: center; }
+  .kpi .ico { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .kpi .ico svg { width: 20px; height: 20px; }
+  .kpi small { color: var(--muted); font-size: 12px; } .kpi b { display: block; font-size: 24px; line-height: 1.1; } .kpi em { font-style: normal; color: var(--dim); font-size: 11px; }
+  .ico.g { background: var(--acc-soft); color: var(--acc); } .ico.r { background: var(--high-bg); color: var(--high); }
+  .ico.y { background: var(--med-bg); color: var(--med); } .ico.b { background: var(--low-bg); color: var(--low); }
+
+  /* ---------- map ---------- */
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tab { border: 1px solid var(--line); background: var(--panel2); color: var(--muted); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 12.5px; }
+  .tab[aria-selected="true"] { background: var(--acc); color: var(--acc-ink); border-color: var(--acc); font-weight: 700; }
+  .mapbox { position: relative; border: 1px solid var(--line2); border-radius: 12px; overflow: hidden; background: #000; }
+  .mapwrap { overflow: auto; max-height: 560px; }
+  .mapinner { position: relative; width: 100%; line-height: 0; }
+  .mapinner canvas { width: 100%; height: auto; display: block; }
+  .pin { position: absolute; transform: translate(-50%, -100%); width: 26px; height: 32px; cursor: pointer; line-height: 1; z-index: 2; }
+  .pin svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+  .pin span { position: absolute; top: 4px; left: 0; width: 100%; text-align: center; font-size: 10px; font-weight: 800; color: #fff; }
+  .pin.sel { z-index: 3; transform: translate(-50%, -100%) scale(1.25); }
+  .mlegend { position: absolute; left: 10px; top: 10px; background: rgba(7, 16, 13, .86); border: 1px solid var(--line2); border-radius: 10px;
+             padding: 9px 12px; font-size: 11.5px; line-height: 1.9; z-index: 4; }
+  .mlegend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -2px; }
+  .zoom { position: absolute; left: 10px; bottom: 44px; display: flex; flex-direction: column; gap: 4px; z-index: 4; }
+  .zoom button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line2); background: rgba(7, 16, 13, .86); cursor: pointer; font-size: 16px; }
+  .scalebar { position: absolute; left: 10px; bottom: 10px; z-index: 4; font-size: 10.5px; color: #fff; text-shadow: 0 1px 2px #000; }
+  .scalebar div { height: 6px; border: 1.5px solid #fff; border-top: 0; margin-top: 2px; }
+  .sat { position: absolute; right: 10px; bottom: 10px; z-index: 4; display: flex; background: rgba(7, 16, 13, .86); border: 1px solid var(--line2); border-radius: 9px; padding: 3px; }
+  .sat button { border: 0; background: transparent; color: var(--muted); border-radius: 6px; padding: 5px 11px; cursor: pointer; font-size: 12px; }
+  .sat button[aria-pressed="true"] { background: #14392a; color: var(--ink); }
+
+  /* ---------- region list ---------- */
+  .listcard { display: flex; flex-direction: column; }
+  .listhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .listhead select { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 6px 10px; color-scheme: dark; }
+  .regions { overflow: auto; max-height: 520px; padding-right: 4px; display: flex; flex-direction: column; gap: 10px; }
+  .rc { display: grid; grid-template-columns: 76px 1fr; gap: 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .rc.sel { border-color: var(--acc); background: #12261d; }
+  .rc img { width: 76px; height: 76px; object-fit: cover; border-radius: 8px; background: #000; }
+  .rc .t { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; } .rc .t b { font-size: 14px; }
+  .rc .t .conf { margin-left: auto; font-size: 11.5px; color: var(--muted); }
+  .rc .d { color: var(--muted); font-size: 12px; margin: 3px 0; } .rc .m { font-size: 12px; color: var(--ink); }
+  .rc .m span { color: var(--dim); margin: 0 5px; }
+  .rc .act { display: flex; justify-content: flex-end; margin-top: 4px; }
+  .rc .more { grid-column: 1 / -1; display: none; font-size: 12px; border-top: 1px solid var(--line); padding-top: 8px; color: var(--muted);
+              grid-template-columns: repeat(3, 1fr); gap: 4px 12px; } .rc.open .more { display: grid; } .more b { color: var(--ink); font-weight: 600; }
+  .badge { display: inline-block; padding: 1px 9px; border-radius: 6px; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; }
+  .badge.High { background: var(--high-bg); color: var(--high); border: 1px solid var(--high); }
+  .badge.Medium { background: var(--med-bg); color: var(--med); border: 1px solid var(--med); }
+  .badge.Low { background: var(--low-bg); color: var(--low); border: 1px solid var(--low); }
+  .btn.sm { padding: 5px 12px; font-size: 12px; background: transparent; border: 1px solid var(--acc-line); color: var(--acc); }
+  .empty { color: var(--muted); padding: 24px 6px; text-align: center; }
+  .locked { text-align: center; padding: 70px 20px; color: var(--muted); }
+  .locked b { display: block; color: var(--ink); font-size: 18px; margin-bottom: 6px; }
+
+  /* ---------- report ---------- */
+  .rtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rtable th, .rtable td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+  .rtable th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .rmap { max-width: 100%; border-radius: 10px; border: 1px solid var(--line2); display: block; }
+  .kv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 18px; } .kv small { color: var(--dim); display: block; font-size: 11px; } .kv b { font-size: 14px; }
+
+  @media (max-width: 1100px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); } .grid2, .grid2.wide { grid-template-columns: 1fr; }
+    .banner { grid-template-columns: auto 1fr; } .form { grid-template-columns: 1fr 1fr; } .kv { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; display: flex; gap: 6px; overflow-x: auto; padding: 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .brand { padding: 0 8px 0 2px; } .brand small { display: none; } nav { display: flex; gap: 4px; } nav button { white-space: nowrap; margin: 0; }
+    main { padding: 16px 14px 50px; } .imgpair, .outs3, .metrics3, .form { grid-template-columns: 1fr; } .thumbs { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media print {
+    body, .card, .rc, .kpi { background: #fff !important; color: #111 !important; } aside, .noprint { display: none !important; }
+    .app { display: block; } main { padding: 0; } .page { display: none !important; } #pg-report { display: block !important; }
+    .card { border-color: #ccc !important; } .rtable th, .rtable td { border-color: #ddd; color: #111; } .muted, .hint, small { color: #555 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><div class="logo">R</div><div><b>ROAD-EVO</b><small>Road Network Intelligence</small></div></div>
+    <nav id="nav">
+      <button data-go="dash" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Dashboard</button>
+      <button data-go="change" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Change Analysis</button>
+      <button data-go="road" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20c4-2 4-6 8-8s4-6 8-8"/></svg>Road Network</button>
+      <button data-go="prio" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4m0 0h12l-2 4 2 4H5"/></svg>Priority Review</button>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- ================= DASHBOARD ================= -->
+    <section class="page show" id="pg-dash">
+      <div class="headrow">
+        <div><div class="crumb">ROAD-EVO / Dashboard</div><h1>Road Network Evolution</h1><div class="sub">Analyze road changes using multi-temporal satellite imagery</div></div>
+        <div class="pills"><span class="pill" id="pipe"><i></i><span>Checking pipeline…</span></span></div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">01 — Study area</div><h2>Select Analysis Parameters</h2>
+        <div class="hint">Describe the study area and the two observation dates, then add the two images exported from Google Earth Engine.</div>
+        <div class="form">
+          <div class="field"><label for="loc">Study Location</label><input id="loc" placeholder="9.89000000, 78.03000000"><div class="hint">Enter latitude, longitude (optional)</div></div>
+          <div class="field"><label for="d1">Previous Observation — T1</label><input id="d1" type="date"><div class="hint">Earlier satellite observation</div></div>
+          <div class="field"><label for="d2">Current Observation — T2</label><input id="d2" type="date"><div class="hint">Recent satellite observation</div></div>
+          <div class="field"><label for="gsd">Pixel size (m)</label><input id="gsd" type="number" min="0.05" max="30" step="0.05" value="0.5"><div class="hint">Models trained at ~0.5 m</div></div>
+        </div>
+        <div class="formfoot">
+          <div class="hint">● Imagery source: Sentinel-2 / Google Earth Engine export (same region, size and scale for both dates)</div>
+          <button class="btn" id="run" disabled>Run Analysis</button>
+        </div>
+        <div class="status" id="status"><div class="spin"></div><div id="statusText"></div></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+          <div><div class="eyebrow">02 — Satellite imagery</div><h2>Bi-temporal Observation</h2></div>
+          <span class="pill" id="imgpill" style="display:none"><i></i>Imagery loaded successfully</span>
+        </div>
+        <div class="grid2" style="margin-top:12px">
+          <div class="obs"><div class="obs-head"><div><span class="tag">T1</span>Previous Image</div><span class="hint" id="cap1"></span></div>
+            <label class="drop" id="drop1"><input type="file" id="file1" accept="image/*"><img id="prev1" alt="Previous image">
+              <div class="ph"><b>Add the earlier image</b><span>Click or drop a PNG / JPG</span></div></label></div>
+          <div class="obs"><div class="obs-head"><div><span class="tag">T2</span>Current Image</div><span class="hint" id="cap2"></span></div>
+            <label class="drop" id="drop2"><input type="file" id="file2" accept="image/*"><img id="prev2" alt="Current image">
+              <div class="ph"><b>Add the later image</b><span>Same area, same size, same scale</span></div></label></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CHANGE ANALYSIS ================= -->
+    <section class="page" id="pg-change"></section>
+    <section class="page" id="pg-road"></section>
+    <section class="page" id="pg-prio"></section>
+    <section class="page" id="pg-report"></section>
+  </main>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const COL = {High: "#ef4444", Medium: "#f5b324", Low: "#4c8dff"};
+const files = {1: null, 2: null};
+let data = null, imgs = null, selected = null, sortBy = "priority";
+const allMaps = [];
+
+/* tiny DOM helper: h("div", {class:"x", onclick:fn}, child, "text") — text is always set as text, never HTML */
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "style") e.style.cssText = v; else if (v !== null && v !== undefined && v !== false) e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return e;
+}
+const svg = (inner, cls) => { const w = document.createElement("span"); w.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`; const s = w.firstChild; if (cls) s.setAttribute("class", cls); return s; };
+const ICON = {
+  check: '<path d="M20 6L9 17l-5-5"/>', chart: '<path d="M4 20V10m6 10V4m6 16v-7m4 7H2"/>', layers: '<path d="M12 2l9 5-9 5-9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>', road: '<path d="M8 3L5 21M16 3l3 18M12 4v3m0 4v3m0 4v2"/>',
+  alert: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6m0 3v.5"/>', circle: '<circle cx="12" cy="12" r="8"/>', shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  flag: '<path d="M5 21V4m0 0h12l-2 4 2 4H5"/>', down: '<path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/>'
+};
+const fmt = n => Number(n).toLocaleString();
+const pad2 = n => String(n).padStart(2, "0");
+const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+const dl = (name, text, type) => { const a = h("a", {href: URL.createObjectURL(new Blob([text], {type})), download: name}); a.click(); };
+
+/* ---------------- navigation ---------------- */
+function go(page) {
+  document.querySelectorAll(".page").forEach(p => p.classList.toggle("show", p.id === "pg-" + page));
+  document.querySelectorAll("#nav button").forEach(b => b.setAttribute("aria-current", b.dataset.go === page ? "page" : "false"));
+  window.scrollTo(0, 0);
+  requestAnimationFrame(() => allMaps.forEach(m => m.relayout()));
+}
+document.querySelectorAll("#nav button").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
+
+/* ---------------- pipeline status pill ---------------- */
+async function pollHealth() {
+  const pill = $("pipe"), txt = pill.lastChild;
+  try {
+    const r = await (await fetch("/api/health")).json();
+    if (r.status === "ready") { pill.className = "pill ok"; txt.textContent = "AI Pipeline Ready"; return; }
+    if (r.status === "error") { pill.className = "pill err"; txt.textContent = "Models not loaded"; pill.title = r.error; showStatus("Models could not be loaded: " + r.error, true); return; }
+    pill.className = "pill warn"; txt.textContent = "Loading models…";
+  } catch { pill.className = "pill err"; txt.textContent = "Server not reachable"; }
+  setTimeout(pollHealth, 2000);
+}
+pollHealth();
+
+/* ---------------- dashboard: uploads and run ---------------- */
+function showStatus(msg, err) { const s = $("status"); s.className = "status show" + (err ? " error" : ""); $("statusText").textContent = msg; }
+const hideStatus = () => { $("status").className = "status"; };
+
+function bindDrop(n) {
+  const drop = $("drop" + n), input = $("file" + n);
+  const take = f => {
+    if (!f) return;
+    if (!f.type.startsWith("image/") || /tiff?$/i.test(f.type)) { if (!/\.(png|jpe?g|webp|bmp)$/i.test(f.name)) { showStatus("Please add a PNG or JPG image (export GeoTIFFs as PNG first).", true); return; } }
+    files[n] = f; $("prev" + n).src = URL.createObjectURL(f); drop.classList.add("has"); $("cap" + n).textContent = f.name;
+    hideStatus(); $("run").disabled = !(files[1] && files[2]); $("imgpill").style.display = files[1] && files[2] ? "inline-flex" : "none";
+  };
+  input.addEventListener("change", () => take(input.files[0]));
+  ["dragenter", "dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", ev => take(ev.dataTransfer.files[0]));
+}
+bindDrop(1); bindDrop(2);
+
+$("run").addEventListener("click", async () => {
+  const fd = new FormData();
+  fd.append("t1", files[1]); fd.append("t2", files[2]); fd.append("gsd", $("gsd").value || "0.5");
+  fd.append("location", $("loc").value); fd.append("t1_date", $("d1").value); fd.append("t2_date", $("d2").value);
+  $("run").disabled = true;
+  const t0 = Date.now();
+  const timer = setInterval(() => showStatus(`Running CRNet and LGMM-Net… ${Math.round((Date.now() - t0) / 1000)} s (large images can take a few minutes)`), 500);
+  showStatus("Running CRNet and LGMM-Net…");
+  try {
+    const r = await fetch("/api/analyse", {method: "POST", body: fd});
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : "Server error " + r.status);
+    data = j;
+    imgs = {};
+    await Promise.all(["t1", "t2", "roads_t1", "roads_t2", "priority", "heat", "mask", "overlay"].map(async k => imgs[k] = await loadImg(data.images[k])));
+    imgs.outputs = await Promise.all(data.images.outputs.map(loadImg));
+    selected = null; outputIdx = 0; buildAll(); hideStatus();
+    document.querySelectorAll("#nav button").forEach(b => b.disabled = false);
+    go("change");
+  } catch (e) { showStatus(e.message || String(e), true); }
+  finally { clearInterval(timer); $("run").disabled = !(files[1] && files[2]); }
+});
+
+/* ---------------- shared bits ---------------- */
+const pageHead = (crumb, title, sub, pill) => h("div", {class: "headrow"},
+  h("div", {}, h("div", {class: "crumb"}, crumb), h("h1", {}, title), h("div", {class: "sub"}, sub)), pill);
+const okPill = txt => h("div", {class: "pills"}, h("span", {class: "pill ok"}, h("i"), txt));
+const dateOf = k => (data.meta[k] || "").trim();
+
+function buildAll() { allMaps.length = 0; buildChange(); buildRoad(); buildPrio(); buildReport(); }
+
+/* ---------------- CHANGE ANALYSIS ---------------- */
+let outputIdx = 0;
+function buildChange() {
+  const m = data.meta, k = data.metrics, host = $("pg-change"); host.replaceChildren();
+  host.append(pageHead("ROAD-EVO / Change Analysis / LGMM", "Change Detection (LGMM)",
+    "Detect road changes between multi-temporal satellite images using LGMM network", okPill("LGMM Analysis Completed")));
+
+  const stat = (a, b) => h("div", {class: "stat"}, h("small", {}, a), h("b", {}, b));
+  host.append(h("div", {class: "card banner"},
+    h("div", {class: "check"}, svg(ICON.check)),
+    h("div", {}, h("h2", {}, "Model Run Successful"), h("div", {class: "hint"}, "LGMM has processed the input images and generated change detection results.")),
+    stat("Model", "LGMM"), stat("Inference Time", m.seconds_change + " s"), stat("Input Size", `${m.model_input} × ${m.model_input}`),
+    stat("Output", `${m.n_outputs} map${m.n_outputs === 1 ? "" : "s"}`)));
+
+  const box = (cap, sub, src) => h("div", {class: "imgbox"}, h("div", {class: "cap"}, cap, sub ? h("small", {}, sub) : null), h("img", {src, alt: cap}));
+  const inputs = h("div", {class: "card"}, h("h3", {}, svg(ICON.image), "Input Images"),
+    h("div", {class: "imgpair"}, box("T1 (Previous)", dateOf("t1_date"), data.images.t1), box("T2 (Current)", dateOf("t2_date"), data.images.t2)));
+
+  const heatSrc = outputIdx === 0 ? data.images.heat : data.images.outputs[outputIdx];
+  const probBox = h("div", {class: "imgbox sel"}, h("div", {class: "cap"}, outputIdx === 0 ? "Change Probability Map" : `Change Probability (Output ${outputIdx})`),
+    h("div", {class: "cbar"}, h("img", {src: heatSrc, alt: "Change probability map"}),
+      h("div", {class: "bar"}), h("div", {class: "ticks"}, h("span", {}, "1.0"), h("span", {}, "0.5"), h("span", {}, "0.0"))));
+  const overlayBox = h("div", {class: "imgbox"}, h("div", {class: "cap"}, "Overlay (on T2)"),
+    h("img", {src: data.images.overlay, alt: "Overlay on T2"}),
+    h("div", {class: "legend row"}, h("span", {}, h("i", {style: "background:#ef4444"}), "Road Change"), h("span", {}, h("i", {style: "background:#3a4a43"}), "No Change")));
+  const out = h("div", {class: "card"}, h("h3", {}, svg(ICON.chart), "LGMM Output"),
+    h("div", {class: "outs3"}, probBox, box("Binary Change Mask", "", data.images.mask), overlayBox));
+
+  host.append(h("div", {class: "grid2 wide"}, inputs, out));
+
+  const met = (a, b) => h("div", {class: "metric"}, h("small", {}, a), h("b", {}, b));
+  const metrics = h("div", {class: "card"}, h("h3", {}, svg(ICON.chart), "Analysis Metrics"),
+    h("div", {class: "metrics3"}, met("Changed Pixels", fmt(k.changed_pixels)), met("Total Pixels", fmt(k.total_pixels)), met("Change Percentage", k.change_pct + "%")),
+    h("div", {class: "okbox"}, h("div", {class: "check", style: "width:34px;height:34px"}, svg(ICON.check)),
+      h("div", {}, h("b", {}, k.changed_pixels ? "LGMM detected road changes successfully!" : "No road changes detected"),
+        h("span", {}, `The model has identified ${fmt(k.changed_pixels)} changed pixels (${k.change_pct}% of the image).`))));
+
+  const thumbs = h("div", {class: "thumbs"}, data.images.outputs.map((src, i) =>
+    h("button", {class: "thumb" + (i === outputIdx ? " sel" : ""), onclick: () => { outputIdx = i; buildChange(); }}, h("img", {src, alt: "Output " + i}), "Output " + i)));
+  const all = h("div", {class: "card"}, h("h3", {}, svg(ICON.layers), `All Output Maps (${m.n_outputs})`), thumbs,
+    h("div", {class: "rowend"}, h("button", {class: "btn", onclick: downloadCsv}, "Download Results")));
+  host.append(h("div", {class: "grid2 wide"}, metrics, all));
+}
+
+function downloadCsv() {
+  const cols = ["rank", "priority", "change_type", "area_m2", "area_px", "affected_road_length_m", "confidence_C", "road_association_RAS", "length_norm_L", "connectivity_K", "priority_score", "centroid_x", "centroid_y"];
+  dl("road_changes.csv", [cols.join(",")].concat(data.regions.map(r => cols.map(c => r[c]).join(","))).join("\n"), "text/csv");
+}
+
+/* ---------------- MAP COMPONENT (canvas layers + pins + zoom + scale bar) ---------------- */
+function createMap(opts) {
+  const W = data.meta.width, H = data.meta.height, gsd = data.meta.gsd;
+  const canvas = h("canvas", {width: W, height: H}), inner = h("div", {class: "mapinner"}, canvas),
+        wrap = h("div", {class: "mapwrap"}, inner), box = h("div", {class: "mapbox"}, wrap);
+  let zoom = 1, layers = [], pins = [], pinEls = new Map(), scale = null;
+  const ctx = canvas.getContext("2d");
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (const L of layers) { if (L.fill) { ctx.fillStyle = L.fill; ctx.fillRect(0, 0, W, H); } else ctx.drawImage(L.img, 0, 0, W, H); }
+  }
+  function updateScale() {
+    if (!scale || !inner.clientWidth) return;
+    const mPerPx = gsd * W / inner.clientWidth;
+    const steps = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
+    const meters = steps.find(s => s / mPerPx >= 70) || steps[steps.length - 1];
+    scale.firstChild.textContent = meters >= 1000 ? meters / 1000 + " km" : meters + " m";
+    scale.lastChild.style.width = Math.round(meters / mPerPx) + "px";
+  }
+  function setZoom(z) { zoom = Math.max(1, Math.min(6, z)); inner.style.width = zoom * 100 + "%"; updateScale(); }
+  function mkPin(r) {
+    const p = h("div", {class: "pin", title: `Region ${pad2(r.rank)} — ${r.priority}`, style: `left:${100 * r.centroid_x / W}%;top:${100 * r.centroid_y / H}%`, onclick: e => { e.stopPropagation(); opts.onPin && opts.onPin(r); }});
+    p.innerHTML = `<svg viewBox="0 0 26 32"><path d="M13 31C13 31 2 19 2 12a11 11 0 0 1 22 0c0 7-11 19-11 19z" fill="${COL[r.priority]}" stroke="#fff" stroke-width="1.6"/></svg>`;
+    p.append(h("span", {}, pad2(r.rank)));
+    return p;
+  }
+  if (opts.legend) box.append(opts.legend);
+  box.append(
+    h("div", {class: "zoom"}, h("button", {onclick: () => setZoom(zoom * 1.5), "aria-label": "Zoom in"}, "+"), h("button", {onclick: () => setZoom(zoom / 1.5), "aria-label": "Zoom out"}, "−"),
+      h("button", {onclick: () => { setZoom(1); wrap.scrollTo(0, 0); }, "aria-label": "Reset view", title: "Reset"}, "⌖")));
+  scale = h("div", {class: "scalebar"}, h("span", {}, ""), h("div", {})); box.append(scale);
+  if (opts.toggle) box.append(opts.toggle);
+
+  const api = {
+    el: box,
+    setLayers(l) { layers = l; draw(); },
+    setPins(list) { pins = list; pinEls.forEach(e => e.remove()); pinEls.clear(); list.forEach(r => { const p = mkPin(r); pinEls.set(r.id, p); inner.append(p); }); },
+    markSelected(id) { pinEls.forEach((e, k) => e.classList.toggle("sel", k === id)); },
+    focus(r) {
+      setZoom(Math.max(zoom, 2.5));
+      requestAnimationFrame(() => {
+        wrap.scrollTo({left: r.centroid_x / W * inner.clientWidth - wrap.clientWidth / 2, top: r.centroid_y / H * inner.clientHeight - wrap.clientHeight / 2, behavior: "smooth"});
+      });
+    },
+    relayout: updateScale, toCanvas: () => canvas
+  };
+  allMaps.push(api);
+  return api;
+}
+
+/* ---------------- ROAD NETWORK ---------------- */
+function buildRoad() {
+  const m = data.metrics, host = $("pg-road"); host.replaceChildren();
+  host.append(pageHead("ROAD-EVO / Road Network", "Road Network Extraction (CRNet)",
+    "Roads extracted from each image by CRNet. White lines show the road centrelines.", okPill("CRNet Extraction Completed")));
+  const net = m.road_km_t2 - m.road_km_t1;
+  const kpi = (cls, ico, a, b, c) => h("div", {class: "kpi"}, h("div", {class: "ico " + cls}, svg(ICON[ico])), h("div", {}, h("small", {}, a), h("b", {}, b), h("em", {}, c)));
+  host.append(h("div", {class: "kpis", style: "grid-template-columns:repeat(4,1fr)"},
+    kpi("g", "road", "Road Length — T1", m.road_km_t1 + " km", `${m.road_cov_t1}% of pixels are road`),
+    kpi("g", "road", "Road Length — T2", m.road_km_t2 + " km", `${m.road_cov_t2}% of pixels are road`),
+    kpi(net >= 0 ? "g" : "r", "chart", "Net Change", (net >= 0 ? "+" : "") + net.toFixed(2) + " km", "T2 minus T1"),
+    kpi("b", "layers", "Model", "CRNet", `${data.meta.crnet_tile}×${data.meta.crnet_tile} tiles · ${data.meta.seconds_roads} s`)));
+  const one = (tag, title, date, base, roads) => {
+    const mp = createMap({}); mp.setLayers([{img: base}, {img: roads}]);
+    return h("div", {class: "card"}, h("h3", {}, h("span", {class: "tag"}, tag), title, h("span", {class: "hint", style: "margin-left:auto"}, date)), h("div", {style: "margin-top:12px"}, mp.el));
+  };
+  host.append(h("div", {class: "grid2"}, one("T1", "Previous Road Network", dateOf("t1_date"), imgs.t1, imgs.roads_t1), one("T2", "Current Road Network", dateOf("t2_date"), imgs.t2, imgs.roads_t2)));
+  requestAnimationFrame(() => host.querySelectorAll(".mapbox").forEach(() => {}));
+}
+
+/* ---------------- PRIORITY REVIEW ---------------- */
+let map = null, mapTab = "overlay", roadsOnly = false;
+function sortedRegions() {
+  const a = data.regions.slice();
+  const key = {priority: r => r.rank, confidence: r => -r.confidence_C, area: r => -r.area_px, length: r => -r.affected_road_length_m}[sortBy];
+  return a.sort((x, y) => key(x) - key(y));
+}
+function applyLayers() {
+  const bg = roadsOnly ? {fill: "#04100c"} : {img: mapTab === "t1" ? imgs.t1 : imgs.t2};
+  const L = [bg];
+  if (mapTab === "t1") L.push({img: imgs.roads_t1}); else L.push({img: imgs.roads_t2});
+  if (mapTab === "overlay") L.push({img: imgs.priority});
+  map.setLayers(L);
+  map.setPins(mapTab === "overlay" ? data.regions : []); map.markSelected(selected);
+}
+function buildPrio() {
+  const k = data.metrics, host = $("pg-prio"); host.replaceChildren();
+  const range = [dateOf("t1_date"), dateOf("t2_date")].every(Boolean) ? h("span", {class: "pill"}, `T1: ${dateOf("t1_date")}   T2: ${dateOf("t2_date")}`) : null;
+  host.append(h("div", {class: "headrow"},
+    h("div", {}, h("div", {class: "crumb"}, "ROAD-EVO / Priority Review"), h("h1", {}, "Priority Review"),
+      h("div", {class: "sub"}, "View and prioritize detected road changes based on impact, confidence and importance.")),
+    h("div", {class: "pills"}, h("span", {class: "pill ok"}, h("i"), "All Analysis Completed"), range, h("button", {class: "btn ghost", onclick: () => go("report")}, "Export Report"))));
+  const kpi = (cls, ico, a, b, c) => h("div", {class: "kpi"}, h("div", {class: "ico " + cls}, svg(ICON[ico])), h("div", {}, h("small", {}, a), h("b", {}, b), h("em", {}, c)));
+  host.append(h("div", {class: "kpis"},
+    kpi("g", "road", "Total Change Regions", k.total_regions, "Detected road changes"), kpi("r", "alert", "High Priority", k.counts.High, "Critical attention required"),
+    kpi("y", "alert", "Medium Priority", k.counts.Medium, "Needs monitoring"), kpi("b", "circle", "Low Priority", k.counts.Low, "Minor changes"),
+    kpi("g", "shield", "Avg. Confidence", k.avg_confidence.toFixed(2), "Model confidence score")));
+
+  const legend = h("div", {class: "mlegend"}, ["High", "Medium", "Low"].map(p => h("div", {}, h("i", {style: "background:" + COL[p]}), p + " Priority")),
+    h("div", {}, h("i", {style: "background:#fff;height:2px;vertical-align:3px"}), "Road Network"));
+  const toggle = h("div", {class: "sat"}, ["Satellite", "Roads only"].map((t, i) =>
+    h("button", {"aria-pressed": String((i === 1) === roadsOnly), onclick: e => { roadsOnly = i === 1; e.target.parentNode.childNodes.forEach((b, j) => b.setAttribute("aria-pressed", String(j === i))); applyLayers(); }}, t)));
+  map = createMap({legend, toggle, onPin: r => select(r.id, true)});
+  const tabs = h("div", {class: "tabs"}, [["overlay", "Change Overlay"], ["t1", "T1 Road Network"], ["t2", "T2 Road Network"]].map(([id, label]) =>
+    h("button", {class: "tab", "aria-selected": String(id === mapTab), onclick: e => { mapTab = id; e.target.parentNode.childNodes.forEach(b => b.setAttribute("aria-selected", "false")); e.target.setAttribute("aria-selected", "true"); applyLayers(); }}, label)));
+  host.append(h("div", {class: "grid2", style: "grid-template-columns:1.5fr 1fr"},
+    h("div", {class: "card"}, tabs, map.el),
+    h("div", {class: "card listcard"},
+      h("div", {class: "listhead"}, h("h3", {}, svg(ICON.flag), "Detected Road Changes"),
+        h("label", {class: "hint"}, "Sort by: ", h("select", {id: "sort", onchange: e => { sortBy = e.target.value; renderList(); }},
+          [["priority", "Priority"], ["confidence", "Confidence"], ["area", "Change area"], ["length", "Road length"]].map(([v, t]) => h("option", {value: v}, t))))),
+      h("div", {class: "regions", id: "regions"}),
+      h("div", {style: "margin-top:12px"}, h("button", {class: "btn dark", onclick: () => go("report")}, "Proceed to Final Report  ›")))));
+  applyLayers(); renderList();
+}
+function renderList() {
+  const host = $("regions"); host.replaceChildren();
+  if (!data.regions.length) { host.append(h("div", {class: "empty"}, "No road changes were found in this image pair.")); return; }
+  for (const r of sortedRegions()) {
+    const more = h("div", {class: "more"},
+      [["Type", r.change_type], ["Score", r.priority_score.toFixed(3)], ["Area", fmt(r.area_m2) + " m²"], ["Road assoc.", r.road_association_RAS.toFixed(2)],
+       ["Connectivity", `${r.connectivity_K.toFixed(2)} (${r.affected_nodes}/${r.total_nodes})`], ["Length term", r.length_norm_L.toFixed(2)]]
+        .map(([a, b]) => h("div", {}, a + ": ", h("b", {style: "text-transform:capitalize"}, b))));
+    const card = h("div", {class: "rc" + (r.id === selected ? " sel open" : ""), "data-id": r.id, onclick: () => select(r.id, true)},
+      h("img", {src: r.thumb, alt: "Region " + pad2(r.rank)}),
+      h("div", {},
+        h("div", {class: "t"}, h("b", {}, "Region " + pad2(r.rank)), h("span", {class: "badge " + r.priority}, r.priority.toUpperCase()), h("span", {class: "conf"}, "Confidence: " + r.confidence_C.toFixed(2))),
+        h("div", {class: "d"}, r.description),
+        h("div", {class: "m"}, "Change Area: " + fmt(r.area_px) + " px", h("span", {}, "|"), "Length: " + r.length_km.toFixed(2) + " km"),
+        h("div", {class: "act"}, h("button", {class: "btn sm", onclick: e => { e.stopPropagation(); select(r.id, true); }}, "View Details  ›"))),
+      more);
+    host.append(card);
+  }
+}
+function select(id, focus) {
+  selected = id;
+  document.querySelectorAll(".rc").forEach(c => { const on = Number(c.dataset.id) === id; c.classList.toggle("sel", on); c.classList.toggle("open", on); });
+  if (map) { map.markSelected(id); const r = data.regions.find(x => x.id === id); if (focus && r) map.focus(r); }
+  const el = document.querySelector(`.rc[data-id="${id}"]`); if (el) el.scrollIntoView({block: "nearest", behavior: "smooth"});
+}
+
+/* ---------------- FINAL REPORT ---------------- */
+function buildReport() {
+  const m = data.meta, k = data.metrics, host = $("pg-report"); host.replaceChildren();
+  host.append(h("div", {class: "headrow"}, h("div", {}, h("div", {class: "crumb"}, "ROAD-EVO / Final Report"), h("h1", {}, "Road Change Report"),
+    h("div", {class: "sub"}, "Detected road changes ranked for map review")),
+    h("div", {class: "pills noprint"}, h("button", {class: "btn ghost", onclick: () => go("prio")}, "‹ Back"), h("button", {class: "btn", onclick: () => window.print()}, "Print / Save as PDF"))));
+  const kv = (a, b) => h("div", {}, h("small", {}, a), h("b", {}, b || "—"));
+  host.append(h("div", {class: "card"}, h("div", {class: "kv"},
+    kv("Study location", m.location), kv("T1 date", dateOf("t1_date")), kv("T2 date", dateOf("t2_date")), kv("Image size", `${m.width} × ${m.height} px at ${m.gsd} m/px`),
+    kv("Change regions", k.total_regions), kv("High / Medium / Low", `${k.counts.High} / ${k.counts.Medium} / ${k.counts.Low}`),
+    kv("Average confidence", k.avg_confidence.toFixed(2)), kv("Road length T1 → T2", `${k.road_km_t1} → ${k.road_km_t2} km`))));
+  const c = document.createElement("canvas"); c.width = m.width; c.height = m.height;
+  const x = c.getContext("2d"); x.drawImage(imgs.t2, 0, 0); x.drawImage(imgs.roads_t2, 0, 0); x.drawImage(imgs.priority, 0, 0);
+  x.font = `bold ${Math.max(14, Math.round(m.width / 55))}px sans-serif`; x.textAlign = "center"; x.textBaseline = "middle";
+  const rad = Math.max(10, Math.round(m.width / 70));
+  data.regions.forEach(r => { x.beginPath(); x.arc(r.centroid_x, r.centroid_y, rad, 0, 7); x.fillStyle = COL[r.priority]; x.fill(); x.lineWidth = 2; x.strokeStyle = "#fff"; x.stroke(); x.fillStyle = "#fff"; x.fillText(pad2(r.rank), r.centroid_x, r.centroid_y + 1); });
+  const pic = h("img", {class: "rmap", alt: "Priority map", src: c.toDataURL("image/jpeg", .9)});
+  host.append(h("div", {class: "card"}, h("h3", {}, "Priority map"), h("div", {style: "margin-top:12px"}, pic)));
+  const head = ["#", "Priority", "Type", "Area (m²)", "Road length (m)", "Confidence", "Score"];
+  const rows = data.regions.map(r => h("tr", {}, h("td", {}, pad2(r.rank)), h("td", {}, h("span", {class: "badge " + r.priority}, r.priority.toUpperCase())),
+    h("td", {style: "text-transform:capitalize"}, r.change_type), h("td", {}, fmt(r.area_m2)), h("td", {}, fmt(r.affected_road_length_m)), h("td", {}, r.confidence_C.toFixed(2)), h("td", {}, r.priority_score.toFixed(3))));
+  host.append(h("div", {class: "card"}, h("h3", {}, "Ranked road changes"), h("div", {style: "overflow-x:auto;margin-top:10px"},
+    rows.length ? h("table", {class: "rtable"}, h("thead", {}, h("tr", {}, head.map(t => h("th", {}, t)))), h("tbody", {}, rows)) : h("div", {class: "empty"}, "No road changes were found."))));
+}
+
+window.addEventListener("resize", () => allMaps.forEach(m => m.relayout()));
+})();
+</script>
+</body>
+</html>
